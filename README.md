@@ -222,8 +222,8 @@ cluster with generated credentials and cleans it up. No Docker daemon is needed.
 The browser suite exercises the compiled production bundle and API.
 
 [GitHub Actions](./.github/workflows/ci.yml) runs the quality gates, browser tests,
-production dependency audit, Compose validation, and container build/startup checks when this
-directory is published as a GitHub repository. It does not deploy automatically.
+production dependency audit, Compose validation, and container build/startup checks on
+every push to `main` and on every pull request. It does not deploy automatically.
 
 ## Architecture
 

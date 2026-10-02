@@ -197,9 +197,15 @@ manual dispatch, with read-only token permissions, one run per ref (older runs c
 7. Upload coverage, Playwright reports and traces as artifacts (14 days).
 
 [`.github/dependabot.yml`](../.github/dependabot.yml) opens weekly update PRs for npm, Docker and GitHub Actions.
+GitHub also runs it once when the file first lands, so a freshly pushed repository receives a batch of update PRs
+immediately, and each one triggers this workflow. Several are **major-version bumps** (for example a newer Node
+base image or React) that may fail CI or conflict with the project's constraints (`engines` is `>=24 <25`); review
+each one rather than merging blindly.
 
-**CI does not deploy anything**, publish an image, scan images, sign artifacts, or produce a changelog. The
-local workspace is not currently a Git repository; the workflow takes effect once the project is pushed to GitHub.
+**CI does not deploy anything**, publish an image, scan images, sign artifacts, or produce a changelog. As of
+2026-10-02 the project is hosted in the private GitHub repository `sukurcf/invoice-app`, and the first run, on the
+initial commit, passed every step — including the container build, stack startup (`db` → `migrate` → `app`),
+Caddyfile validation, CLI administrator creation, and the in-container smoke test.
 
 ## 10.11 Running somewhere other than the supplied Compose stack
 

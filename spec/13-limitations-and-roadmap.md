@@ -79,7 +79,7 @@ Real properties of the current code, none of which compromise the safety guarant
     image against a newer schema is **not** detected ([§6.7](./06-data-and-persistence.md#67-migrations)).
 21. **Docker logs are not rotated**, and `unhealthy` containers are not restarted automatically.
 22. **Repository leftovers:** `images/` shows the retired 0.1.0 demo UI and `pgm.py` is an unrelated stub
-    ([§1.8](./01-product-overview.md#18-product-history)); the local workspace is not a Git repository.
+    ([§1.8](./01-product-overview.md#18-product-history)).
 
 ## 13.3 Roadmap suggestions
 

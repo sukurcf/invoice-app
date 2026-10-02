@@ -81,7 +81,9 @@ Statements that are easy to get wrong from reading code alone were checked again
 - the behavior of a write blocked by the global lock — `500 INTERNAL_ERROR` after 15.0 s, no partial change, a
   clean retry — and how the lock appears in `pg_locks` ([§5.5](./05-invoice-lifecycle.md#55-concurrency-control),
   [§12.2](./12-operations.md#122-observability));
-- the per-file test counts and coverage figures ([§11](./11-testing-and-quality.md)).
+- the per-file test counts and coverage figures ([§11](./11-testing-and-quality.md));
+- the GitHub Actions pipeline on the initial push, including the container build, stack startup, Caddyfile
+  validation and in-container smoke test — all steps passed ([§10.10](./10-configuration-and-deployment.md#1010-continuous-integration)).
 
 ## Keeping the specification accurate
 

@@ -129,7 +129,8 @@ a guarantee, add an invariant row and a test, and keep the test name descriptive
 
 | Area | Status |
 | --- | --- |
-| Container runtime, Caddy TLS issuance, real DNS | Only in CI (build, start, smoke); not executed locally in this workspace |
+| Container runtime | Exercised **only in CI** (image build, `db` → `migrate` → `app` startup, Caddyfile validation, CLI administrator creation, in-container smoke test). The first GitHub Actions run passed on 2026-10-02; it has not been run on a developer machine |
+| Caddy certificate issuance, real DNS, real HTTPS from a browser | Never exercised; CI validates only the Caddyfile syntax and the application's production-mode behavior |
 | Backup/restore and disaster recovery | Documented ([§12](./12-operations.md)); **not automated** — rehearse it |
 | Browsers other than Chromium; real mobile devices | Not covered |
 | Accessibility (screen readers, contrast, WCAG) | No audits or automated checks |
