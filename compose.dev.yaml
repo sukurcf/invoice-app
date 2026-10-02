@@ -1,0 +1,21 @@
+name: invoice-assistant-dev
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: invoices
+      POSTGRES_USER: invoice_dev
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    ports:
+      - "127.0.0.1:${PGPORT:-5432}:5432"
+    volumes:
+      - development_database:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U invoice_dev -d invoices"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+volumes:
+  development_database:

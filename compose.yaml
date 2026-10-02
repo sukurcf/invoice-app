@@ -1,0 +1,93 @@
+name: invoice-assistant
+
+x-app-image: &app-image
+  image: invoice-exception-assistant:local
+  build: .
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: invoices
+      POSTGRES_USER: invoice_owner
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a database owner secret}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    volumes:
+      - production_database:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U invoice_owner -d invoices"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+    networks: [database]
+
+  migrate:
+    <<: *app-image
+    command: ["sh", "-c", "node build/server/cli.js migrate && node build/server/cli.js provision-app"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://invoice_owner:${POSTGRES_PASSWORD:?Set a database owner secret}@db:5432/invoices
+      APP_DATABASE_PASSWORD: ${APP_DATABASE_PASSWORD:?Set a different application database secret}
+      APP_ORIGIN: https://${APP_DOMAIN:?Set a DNS hostname}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    read_only: true
+    tmpfs: ["/tmp:size=16m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [database]
+
+  app:
+    <<: *app-image
+    init: true
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://invoice_app:${APP_DATABASE_PASSWORD:?Set an application database secret}@db:5432/invoices
+      APP_ORIGIN: https://${APP_DOMAIN:?Set a DNS hostname}
+      HOST: 0.0.0.0
+      PORT: 3000
+      TRUST_PROXY: 1
+      SESSION_HOURS: ${SESSION_HOURS:-8}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    expose: ["3000"]
+    read_only: true
+    tmpfs: ["/tmp:size=32m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    stop_grace_period: 15s
+    mem_limit: 512m
+    networks: [database, web]
+
+  proxy:
+    image: caddy:2-alpine
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Set a DNS hostname}
+    ports: ["80:80", "443:443", "443:443/udp"]
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    networks: [web]
+
+networks:
+  database:
+    internal: true
+  web:
+
+volumes:
+  production_database:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,16 @@
+node_modules
+dist
+build
+coverage
+playwright-report
+test-results
+.git
+.env
+.env.*
+*.log
+*.tsbuildinfo
+.DS_Store
+backups
+*.dump
+images
+pgm.py

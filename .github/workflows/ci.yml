@@ -1,0 +1,65 @@
+name: Validate and package
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: invoice-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - run: npm audit --omit=dev --audit-level=high
+      - name: Validate Compose configurations
+        env:
+          APP_DOMAIN: invoices.example.test
+          POSTGRES_PASSWORD: "1111111111111111111111111111111111111111111111111111111111111111"
+          APP_DATABASE_PASSWORD: "2222222222222222222222222222222222222222222222222222222222222222"
+        run: |
+          docker compose config --quiet
+          docker compose -f compose.dev.yaml config --quiet
+      - name: Build and validate production containers
+        env:
+          APP_DOMAIN: invoices.example.test
+          POSTGRES_PASSWORD: "1111111111111111111111111111111111111111111111111111111111111111"
+          APP_DATABASE_PASSWORD: "2222222222222222222222222222222222222222222222222222222222222222"
+        run: |
+          docker build --tag invoice-exception-assistant:local .
+          docker compose up -d --wait --wait-timeout 120 app
+          docker compose run --rm --no-deps proxy caddy validate --config /etc/caddy/Caddyfile
+          docker compose exec -T -e ADMIN_EMAIL=ci@example.test -e ADMIN_NAME="CI Admin" -e ADMIN_PASSWORD=Disposable-CI-passphrase-only app node build/server/cli.js create-admin
+          docker compose exec -T app node --input-type=module < tests/container-smoke.mjs
+      - name: Stop disposable CI containers
+        if: always()
+        env:
+          APP_DOMAIN: invoices.example.test
+          POSTGRES_PASSWORD: "1111111111111111111111111111111111111111111111111111111111111111"
+          APP_DATABASE_PASSWORD: "2222222222222222222222222222222222222222222222222222222222222222"
+        run: docker compose down --volumes
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports
+          path: |
+            coverage/
+            playwright-report/
+            test-results/
+          retention-days: 14
